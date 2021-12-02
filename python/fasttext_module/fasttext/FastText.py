@@ -101,7 +101,8 @@ class _FastText(object):
             arg_names = ['lr', 'dim', 'ws', 'epoch', 'minCount',
                          'minCountLabel', 'minn', 'maxn', 'neg', 'wordNgrams',
                          'loss', 'bucket', 'thread', 'lrUpdateRate', 't',
-                         'label', 'verbose', 'pretrainedVectors']
+                         'label', 'pos_weights', 'ct_classes', 'gamma', 'alpha',
+                         'beta', 'mu', 'lambda', 'k', 'verbose', 'pretrainedVectors']
             for arg_name in arg_names:
                 setattr(self, arg_name, getattr(args, arg_name))
 
@@ -519,7 +520,8 @@ def train_supervised(*kargs, **kwargs):
     arg_names = ['input', 'lr', 'dim', 'ws', 'epoch', 'minCount',
                  'minCountLabel', 'minn', 'maxn', 'neg', 'wordNgrams', 'loss', 'bucket',
                  'thread', 'lrUpdateRate', 't', 'label', 'verbose', 'pretrainedVectors',
-                 'seed', 'autotuneValidationFile', 'autotuneMetric',
+                 'seed', 'pos_weights', 'ct_classes', 'gamma', 'alpha', 'beta', 'mu', 'lambda', 'k',
+                 'autotuneValidationFile', 'autotuneMetric',
                  'autotunePredictions', 'autotuneDuration', 'autotuneModelSize']
     args, manually_set_args = read_args(kargs, kwargs, arg_names,
                                         supervised_default)
