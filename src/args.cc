@@ -7,6 +7,7 @@
  */
 
 #include "args.h"
+#include "real.h"
 
 #include <stdlib.h>
 
@@ -39,6 +40,14 @@ Args::Args() {
   pretrainedVectors = "";
   saveOutput = false;
   seed = 0;
+//  pos_weights;
+//  ct_classes;
+  gamma = 0.0;
+  alpha = 0.0;
+  beta = 0.0;
+  mu = 0.0;
+  lambda = 0.0;
+  k = 0.0;
 
   qout = false;
   retrain = false;
@@ -188,6 +197,40 @@ void Args::parseArgs(const std::vector<std::string>& args) {
         ai--;
       } else if (args[ai] == "-seed") {
         seed = std::stoi(args.at(ai + 1));
+      } else if (args[ai] == "-pos_weights"){
+        std::string pw = std::string(args.at(ai + 1));
+        std::string delimiter = ",";
+        size_t pos = 0;
+        std::string token;
+        while ((pos = pw.find(delimiter)) != std::string::npos) {
+            token = pw.substr(0, pos);
+//            std::cout << token << std::endl;
+            pos_weights.push_back(std::stod(token));
+            pw.erase(0, pos + delimiter.length());
+        }
+      } else if (args[ai] == "-ct_classes"){
+        std::string pw = std::string(args.at(ai + 1));
+        std::string delimiter = ",";
+        size_t pos = 0;
+        std::string token;
+        while ((pos = pw.find(delimiter)) != std::string::npos) {
+            token = pw.substr(0, pos);
+//            std::cout << token << std::endl;
+            ct_classes.push_back(std::stod(token));
+            pw.erase(0, pos + delimiter.length());
+        }
+      } else if (args[ai] == "-gamma"){
+         gamma = std::stod(args.at(ai + 1));
+      } else if (args[ai] == "-alpha"){
+        alpha = std::stod(args.at(ai + 1));
+      } else if (args[ai] == "-beta"){
+        beta = std::stod(args.at(ai + 1));
+      } else if (args[ai] == "-mu"){
+        mu = std::stod(args.at(ai + 1));
+      } else if (args[ai] == "-lambda"){
+        lambda = std::stod(args.at(ai + 1));
+      } else if (args[ai] == "-k"){
+        k = std::stod(args.at(ai + 1));
       } else if (args[ai] == "-qnorm") {
         qnorm = true;
         ai--;

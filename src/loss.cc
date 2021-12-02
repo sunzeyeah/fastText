@@ -8,6 +8,7 @@
 
 #include "loss.h"
 #include "utils.h"
+#include "args.h"
 
 #include <cmath>
 
@@ -126,17 +127,121 @@ void BinaryLogisticLoss::computeOutput(Model::State& state) const {
 OneVsAllLoss::OneVsAllLoss(std::shared_ptr<Matrix>& wo)
     : BinaryLogisticLoss(wo) {}
 
+real OneVsAllLoss::weightedBinaryLogistic(
+    int32_t target,
+    Model::State& state,
+    bool labelIsPositive,
+    real lr,
+    bool backprop,
+    const std::vector<real>& pos_weights,
+    const std::vector<real>& ct_classes,
+    const real gamma,
+    const real alpha,
+    const real beta,
+    const real mu,
+    const real lambda,
+    const real k) const {
+  if (pos_weights.size() == 0 && gamma <= 0 && alpha <= 0){ // ordinary binary cross entropy
+    real score = sigmoid(wo_->dotRow(state.hidden, target));
+    if (backprop) {
+        real delta = lr * (real(labelIsPositive) - score);
+        state.grad.addRow(*wo_, target, delta);
+        wo_->addVectorToRow(state.hidden, target, delta);
+      }
+    if (labelIsPositive) {
+      return -log(score);
+    } else {
+      return -log(1.0 - score);
+    }
+  } else if (pos_weights.size() > 0) { // binary cross entropy with pos weight
+    real score = sigmoid(wo_->dotRow(state.hidden, target));
+    real pos_weight = pos_weights[target];
+    if (backprop) {
+        real delta;
+        if (labelIsPositive) {
+            delta = lr * pos_weight * (real(labelIsPositive) - score);
+        } else {
+            delta = lr * (real(labelIsPositive) - score);
+        }
+        state.grad.addRow(*wo_, target, delta);
+        wo_->addVectorToRow(state.hidden, target, delta);
+      }
+    if (labelIsPositive) {
+      return -pos_weight * log(score);
+    } else {
+      return -log(1.0 - score);
+    }
+  } else if (alpha > 0 && gamma > 0) { // distribution balanced loss
+    real s_inv = 0.0;
+    real s = 0.0;
+    for (size_t i = 0; i < ct_classes.size(); i++) {
+        s_inv += 1.0 / ct_classes[i];
+        s += ct_classes[i];
+      }
+    real r_db = (1.0 / ct_classes[target]) / s_inv;
+    real r_db_hat = alpha + sigmoid(beta * (r_db - mu));
+    real v = k * log(s / ct_classes[target] - 1.0);
+    real score;
+    if (labelIsPositive){
+        score = sigmoid(wo_->dotRow(state.hidden, target) - v);
+    } else {
+        score = sigmoid(lambda * (wo_->dotRow(state.hidden, target) - v));
+    }
+    if (backprop) {
+        real delta;
+        if (labelIsPositive){
+            delta = r_db_hat * pow(1.0-score, gamma) * (-gamma * score * log(score) + 1.0 - score);
+        } else {
+            delta = r_db_hat * pow(score, gamma) * (gamma * (1.0 - score) * log(1.0 - score) - score);
+        }
+        state.grad.addRow(*wo_, target, delta);
+        wo_->addVectorToRow(state.hidden, target, delta);
+      }
+    if (labelIsPositive) {
+      return -r_db_hat * pow(1.0-score, gamma) * log(score);
+    } else {
+      return -r_db_hat * pow(score, gamma) * log(1.0 - score) / lambda;
+    }
+  } else { // focal loss
+    real score = sigmoid(wo_->dotRow(state.hidden, target));
+    if (backprop) {
+        real delta;
+        if (labelIsPositive) {
+            delta = pow(1.0-score, gamma) * (-gamma * score * log(score) + 1.0 - score);
+        } else {
+            delta = pow(score, gamma) * (gamma * (1.0 - score) * log(1.0 - score) - score);
+        }
+        state.grad.addRow(*wo_, target, delta);
+        wo_->addVectorToRow(state.hidden, target, delta);
+      }
+    if (labelIsPositive) {
+      return -pow(1.0-score, gamma) * log(score);
+    } else {
+      return -pow(score, gamma) * log(1.0 - score);
+    }
+  }
+}
+
 real OneVsAllLoss::forward(
     const std::vector<int32_t>& targets,
     int32_t /* we take all targets here */,
     Model::State& state,
     real lr,
+    Args& args,
     bool backprop) {
   real loss = 0.0;
   int32_t osz = state.output.size();
+  std::vector<real>& pos_weights = args.pos_weights;
+  std::vector<real>& ct_classes = args.ct_classes;
+  real gamma = args.gamma;
+  real alpha = args.alpha;
+  real beta = args.beta;
+  real mu = args.mu;
+  real lambda = args.lambda;
+  real k = args.k;
   for (int32_t i = 0; i < osz; i++) {
     bool isMatch = utils::contains(targets, i);
-    loss += binaryLogistic(i, state, isMatch, lr, backprop);
+    loss += weightedBinaryLogistic(i, state, isMatch, lr, backprop, pos_weights, ct_classes, gamma, alpha, beta, mu, lambda, k);
   }
 
   return loss;
@@ -166,6 +271,7 @@ real NegativeSamplingLoss::forward(
     int32_t targetIndex,
     Model::State& state,
     real lr,
+    Args& args,
     bool backprop) {
   assert(targetIndex >= 0);
   assert(targetIndex < targets.size());
@@ -249,6 +355,7 @@ real HierarchicalSoftmaxLoss::forward(
     int32_t targetIndex,
     Model::State& state,
     real lr,
+    Args& args,
     bool backprop) {
   real loss = 0.0;
   int32_t target = targets[targetIndex];
@@ -324,6 +431,7 @@ real SoftmaxLoss::forward(
     int32_t targetIndex,
     Model::State& state,
     real lr,
+    Args& args,
     bool backprop) {
   computeOutput(state);
 

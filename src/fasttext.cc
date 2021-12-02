@@ -375,12 +375,13 @@ void FastText::supervised(
   if (labels.size() == 0 || line.size() == 0) {
     return;
   }
+  Args args = getArgs();
   if (args_->loss == loss_name::ova) {
-    model_->update(line, labels, Model::kAllLabelsAsTarget, lr, state);
+    model_->update(line, labels, Model::kAllLabelsAsTarget, lr, args, state);
   } else {
     std::uniform_int_distribution<> uniform(0, labels.size() - 1);
     int32_t i = uniform(state.rng);
-    model_->update(line, labels, i, lr, state);
+    model_->update(line, labels, i, lr, args, state);
   }
 }
 
@@ -390,6 +391,7 @@ void FastText::cbow(
     const std::vector<int32_t>& line) {
   std::vector<int32_t> bow;
   std::uniform_int_distribution<> uniform(1, args_->ws);
+  Args args = getArgs();
   for (int32_t w = 0; w < line.size(); w++) {
     int32_t boundary = uniform(state.rng);
     bow.clear();
@@ -399,7 +401,7 @@ void FastText::cbow(
         bow.insert(bow.end(), ngrams.cbegin(), ngrams.cend());
       }
     }
-    model_->update(bow, line, w, lr, state);
+    model_->update(bow, line, w, lr, args, state);
   }
 }
 
@@ -408,12 +410,14 @@ void FastText::skipgram(
     real lr,
     const std::vector<int32_t>& line) {
   std::uniform_int_distribution<> uniform(1, args_->ws);
+  Args args = getArgs();
   for (int32_t w = 0; w < line.size(); w++) {
     int32_t boundary = uniform(state.rng);
     const std::vector<int32_t>& ngrams = dict_->getSubwords(line[w]);
     for (int32_t c = -boundary; c <= boundary; c++) {
       if (c != 0 && w + c >= 0 && w + c < line.size()) {
-        model_->update(ngrams, line, w + c, lr, state);
+        model_->update(ngrams, line, w + c, lr, args, state);
+        model_->update(ngrams, line, w + c, lr, args, state);
       }
     }
   }

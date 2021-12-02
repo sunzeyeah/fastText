@@ -17,6 +17,7 @@
 #include "real.h"
 #include "utils.h"
 #include "vector.h"
+#include "args.h"
 
 namespace fasttext {
 
@@ -67,6 +68,7 @@ class Model {
       const std::vector<int32_t>& targets,
       int32_t targetIndex,
       real lr,
+      Args& args,
       State& state);
   void computeHidden(const std::vector<int32_t>& input, State& state) const;
 

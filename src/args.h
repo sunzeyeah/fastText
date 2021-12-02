@@ -14,6 +14,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "real.h"
+
 namespace fasttext {
 
 enum class model_name : int { cbow = 1, sg, sup };
@@ -59,6 +61,14 @@ class Args {
   std::string pretrainedVectors;
   bool saveOutput;
   int seed;
+  std::vector<real> pos_weights;
+  std::vector<real> ct_classes;
+  double gamma;
+  double alpha;
+  double beta;
+  double mu;
+  double lambda;
+  double k;
 
   bool qout;
   bool retrain;

@@ -17,6 +17,7 @@
 #include "real.h"
 #include "utils.h"
 #include "vector.h"
+#include "args.h"
 
 namespace fasttext {
 
@@ -45,6 +46,7 @@ class Loss {
       int32_t targetIndex,
       Model::State& state,
       real lr,
+      Args& args,
       bool backprop) = 0;
   virtual void computeOutput(Model::State& state) const = 0;
 
@@ -71,6 +73,22 @@ class BinaryLogisticLoss : public Loss {
 };
 
 class OneVsAllLoss : public BinaryLogisticLoss {
+ protected:
+   real weightedBinaryLogistic(
+       int32_t target,
+       Model::State& state,
+       bool labelIsPositive,
+       real lr,
+       bool backprop,
+       const std::vector<real>& pos_weights,
+       const std::vector<real>& ct_classes,
+       const real gamma,
+       const real alpha,
+       const real beta,
+       const real mu,
+       const real lambda,
+       const real k) const;
+
  public:
   explicit OneVsAllLoss(std::shared_ptr<Matrix>& wo);
   ~OneVsAllLoss() noexcept override = default;
@@ -79,6 +97,7 @@ class OneVsAllLoss : public BinaryLogisticLoss {
       int32_t targetIndex,
       Model::State& state,
       real lr,
+      Args& args,
       bool backprop) override;
 };
 
@@ -103,6 +122,7 @@ class NegativeSamplingLoss : public BinaryLogisticLoss {
       int32_t targetIndex,
       Model::State& state,
       real lr,
+      Args& args,
       bool backprop) override;
 };
 
@@ -139,6 +159,7 @@ class HierarchicalSoftmaxLoss : public BinaryLogisticLoss {
       int32_t targetIndex,
       Model::State& state,
       real lr,
+      Args& args,
       bool backprop) override;
   void predict(
       int32_t k,
@@ -156,6 +177,7 @@ class SoftmaxLoss : public Loss {
       int32_t targetIndex,
       Model::State& state,
       real lr,
+      Args& args,
       bool backprop) override;
   void computeOutput(Model::State& state) const override;
 };

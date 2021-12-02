@@ -9,6 +9,7 @@
 #include "model.h"
 #include "loss.h"
 #include "utils.h"
+#include "args.h"
 
 #include <algorithm>
 #include <stdexcept>
@@ -71,6 +72,7 @@ void Model::update(
     const std::vector<int32_t>& targets,
     int32_t targetIndex,
     real lr,
+    Args& args,
     State& state) {
   if (input.size() == 0) {
     return;
@@ -79,7 +81,7 @@ void Model::update(
 
   Vector& grad = state.grad;
   grad.zero();
-  real lossValue = loss_->forward(targets, targetIndex, state, lr, true);
+  real lossValue = loss_->forward(targets, targetIndex, state, lr, args, true);
   state.incrementNExamples(lossValue);
 
   if (normalizeGradient_) {
