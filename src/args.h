@@ -61,6 +61,8 @@ class Args {
   std::string pretrainedVectors;
   bool saveOutput;
   int seed;
+  std::string pos_weights_str;
+  std::string ct_classes_str;
   std::vector<real> pos_weights;
   std::vector<real> ct_classes;
   double gamma;
