@@ -143,9 +143,6 @@ real OneVsAllLoss::weightedBinaryLogistic(
     const real lambda,
     const real k) const {
   if (pos_weights.size() == 0 && gamma <= 0 && alpha <= 0){ // ordinary binary cross entropy
-    // TODO: DEBUG
-    std::cerr << "[ordinary loss] label id: " << target << ", ct classes: " << ct_classes[target] << std::endl;
-    // DEBUG
     real score = sigmoid(wo_->dotRow(state.hidden, target));
     if (backprop) {
         real delta = lr * (real(labelIsPositive) - score);
@@ -158,9 +155,6 @@ real OneVsAllLoss::weightedBinaryLogistic(
       return -log(1.0 - score);
     }
   } else if (pos_weights.size() > 0) { // binary cross entropy with pos weight
-    // TODO: DEBUG
-    std::cerr << "[pos weight loss] label id: " << target << ", ct classes: " << ct_classes[target] << std::endl;
-    // DEBUG
     real score = sigmoid(wo_->dotRow(state.hidden, target));
     real pos_weight = pos_weights[target];
     if (backprop) {
@@ -191,9 +185,6 @@ real OneVsAllLoss::weightedBinaryLogistic(
     real score;
     if (labelIsPositive){
         score = sigmoid(wo_->dotRow(state.hidden, target) - v);
-        // TODO: DEBUG
-        std::cerr << "[db loss] [positive label] label id: " << target << ", ct classes: " << ct_classes[target] << std::endl;
-        // DEBUG
     } else {
         score = sigmoid(lambda * (wo_->dotRow(state.hidden, target) - v));
     }
@@ -213,9 +204,6 @@ real OneVsAllLoss::weightedBinaryLogistic(
       return -r_db_hat * pow(score, gamma) * log(1.0 - score) / lambda;
     }
   } else { // focal loss
-    // TODO: DEBUG
-    std::cerr << "[focal loss] label id: " << target << ", ct classes: " << ct_classes[target] << std::endl;
-    // DEBUG
     real score = sigmoid(wo_->dotRow(state.hidden, target));
     if (backprop) {
         real delta;

@@ -378,23 +378,6 @@ void FastText::supervised(
   }
   Args args = getArgs();
   if (args_->loss == loss_name::ova) {
-    /* // TODO: DEBUG
-    std::cerr << "[FastText::supervised] ova loss" << std::endl;
-    std::string label_str = "";
-    for (int32_t i = 0; i < labels.size(); i++){
-        label_str += dict_->getLabel(labels[i]);
-        label_str += "|";
-        std::cerr << "label id: " << labels[i] << ", label_str: " << label_str << std::endl;
-    }
-    std::string line_str = "";
-    std::cerr << "line size: " << line.size() << std::endl;
-    for (int32_t i = 0; i < line.size(); i++){
-        std::cerr << i << "-th word id: " << line[i] << ", size: "<< dict_->nwords() + dict_->nlabels() << std::endl;
-        line_str += dict_->getWord(line[i]);
-        std::cerr << "word id: " << line[i] << ", line_str: " << line_str << std::endl;
-    }
-    std::cerr << "line: " << line_str << ", label: " << label_str << std::endl;
-    // DEBUG */
     model_->update(line, labels, Model::kAllLabelsAsTarget, lr, args, state);
   } else {
     std::uniform_int_distribution<> uniform(0, labels.size() - 1);
@@ -788,10 +771,7 @@ void FastText::train(const Args& args, const TrainCallback& callback) {
   bool normalizeGradient = (args_->model == model_name::sup);
   model_ = std::make_shared<Model>(input_, output_, loss, normalizeGradient);
 
-  // TODO: DEBUG
-  std::cerr << "[FastText:train] input: " << args_->input << ", lr: " << args_->lr << ", ct_classes: " << args_->ct_classes_str << std::endl;
   if (args_->pos_weights_str.length() > 0){
-    std::cerr << "[FastText:train] pos weights str length > 0" << std::endl;
     std::string d1 = ",";
     std::string d2 = ":";
     std::string pw = args_->pos_weights_str;
@@ -807,8 +787,10 @@ void FastText::train(const Args& args, const TrainCallback& callback) {
         }
         size_t sep = token.find(d2);
         std::string label = token.substr(0, sep);
-        i2ct[getLabelId(label)] = std::stod(token.substr(sep+1, token.length()));
-//            pos_weights.insert(std::pair<std::string, real>(token.substr(0, sep), std::stod(token.substr(sep+1, token.length()))));
+        int32_t label_id = getLabelId(label);
+        double wt = std::stod(token.substr(sep + d2.length(), token.length()));
+        i2ct[label_id] = wt;
+//        std::cerr << "[FastText:train] label: " << label << ", label id: " << label_id << ", weight: " << wt << std::endl;
         pw.erase(0, pos + d1.length());
     }
     std::vector<real> pos_weights(i2ct.size(), 1.0);
@@ -818,7 +800,6 @@ void FastText::train(const Args& args, const TrainCallback& callback) {
     args_->pos_weights = pos_weights;
   }
   if (args_->ct_classes_str.length() > 0){
-    std::cerr << "[FastText:train] ct classes str length > 0" << std::endl;
     std::string d1 = ",";
     std::string d2 = ":";
     std::string pw = args_->ct_classes_str;
@@ -837,19 +818,15 @@ void FastText::train(const Args& args, const TrainCallback& callback) {
         int32_t label_id = getLabelId(label);
         double ct = std::stod(token.substr(sep + d2.length(), token.length()));
         i2ct[label_id] = ct;
-        std::cerr << "[FastText:train] label: " << label << ", label id: " << label_id << ", ct: " << ct << std::endl;
+//        std::cerr << "[FastText:train] label: " << label << ", label id: " << label_id << ", ct: " << ct << std::endl;
         pw.erase(0, pos + d1.length());
     }
     std::vector<real> ct_classes(i2ct.size(), 1.0);
-//    std::cerr << "[FastText:train] finished initing ct_classes" << std::endl;
     for(auto x : i2ct){
         ct_classes[x.first] = x.second;
-//        std::cerr << "[FastText:train] ct_class[" << x.first << "] = " << x.second << std::endl;
     }
     args_->ct_classes = ct_classes;
   }
-  std::cerr << "[FastText:train] starting threads" << std::endl;
-  // DEBUG
 
   startThreads(callback);
 }
